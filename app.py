@@ -74,10 +74,13 @@ if uploaded_file:
         if result_df is not None:
             st.write("### Cost Breakdown", result_df)
             
-            # Save and download results
-            result_df.to_excel("Final_Costs.xlsx", index=False)
-            with open("Final_Costs.xlsx", "rb") as file:
-                st.download_button("📥 Download Cost Breakdown", file, file_name="Final_Costs.xlsx")
-            result_df.to_excel("Final_Costs.xlsx", index=False)
-            with open("Final_Costs.xlsx", "rb") as file:
-                st.download_button("📥 Download Cost Breakdown", file, file_name="Final_Costs.xlsx")
+            # Save and provide download link
+            output_file = "Final_Costs.xlsx"
+            result_df.to_excel(output_file, index=False)
+            with open(output_file, "rb") as file:
+                btn = st.download_button(
+                    label="📥 Download Cost Breakdown",
+                    data=file,
+                    file_name=output_file,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
