@@ -49,7 +49,7 @@ def calculate_final_cost(df, product, destination, incoterm, include_cross_stuff
     return result_df
 
 # Streamlit UI
-st.title("📦 Import Cost Calculator")
+st.title("📦 Export Cost Calculator")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload your cost input Excel file", type=["xlsx"])
