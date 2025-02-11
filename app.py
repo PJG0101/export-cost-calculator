@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # Function to calculate costs
-def calculate_final_cost(df, product, destination, incoterm):
+def calculate_final_cost(df, product, destination, incoterm, include_cross_stuffing, include_sgs):
     filtered_df = df[df['Product'] == product]
 
     if filtered_df.empty:
@@ -11,8 +11,9 @@ def calculate_final_cost(df, product, destination, incoterm):
 
     # Determine relevant costs based on Incoterm
     ocean_freight = filtered_df[f'Ocean Freight ({destination})'].values[0] if incoterm in ['CIF', 'CFR'] else 0
-    cross_stuffing = filtered_df['Cross Stuffing Fee'].values[0] if incoterm in ['CIF', 'CFR'] else 0
+    cross_stuffing = filtered_df['Cross Stuffing Fee'].values[0] if include_cross_stuffing else 0
     land_freight = filtered_df[f'Land Freight ({destination})'].values[0] if incoterm == 'CPT' else 0
+    sgs_fee = filtered_df['SGS'].values[0] if include_sgs else 0
 
     base_cost = filtered_df['Base Cost (Ex-Work)'].values[0]
     packaging_cost = filtered_df['Packaging Cost'].values[0]
@@ -24,7 +25,7 @@ def calculate_final_cost(df, product, destination, incoterm):
 
     total_cost = (
         base_cost + packaging_cost + export_duty + logistic_to_port +
-        ocean_freight + land_freight + thc_stuffing + cross_stuffing + warehousing + demmurag
+        ocean_freight + land_freight + thc_stuffing + cross_stuffing + warehousing + demmurag + sgs_fee
     )
 
     result_df = pd.DataFrame({
@@ -38,6 +39,7 @@ def calculate_final_cost(df, product, destination, incoterm):
         'Ocean Freight': [ocean_freight],
         'Land Freight': [land_freight],
         'THC + Stuffing': [thc_stuffing],
+        'SGS Fee': [sgs_fee],
         'Cross Stuffing Fee': [cross_stuffing],
         'Warehousing': [warehousing],
         'Demmurag': [demmurag],
@@ -60,15 +62,22 @@ if uploaded_file:
     product = st.selectbox("Select Product", df['Product'].unique())
     destination = st.selectbox("Select Destination", ['Tianjin, China', 'Jebel Ali', 'Rotterdam, NL', 'Mersin, Tr'])
     incoterm = st.selectbox("Select Incoterm", ['FOB', 'CIF', 'CFR', 'CPT'])
+    
+    # Checkbox options for additional costs
+    include_cross_stuffing = st.checkbox("Include Cross Stuffing Fee")
+    include_sgs = st.checkbox("Include SGS Fee")
 
     # Calculate button
     if st.button("🔄 Calculate Cost"):
-        result_df = calculate_final_cost(df, product, destination, incoterm)
+        result_df = calculate_final_cost(df, product, destination, incoterm, include_cross_stuffing, include_sgs)
 
         if result_df is not None:
             st.write("### Cost Breakdown", result_df)
             
             # Save and download results
+            result_df.to_excel("Final_Costs.xlsx", index=False)
+            with open("Final_Costs.xlsx", "rb") as file:
+                st.download_button("📥 Download Cost Breakdown", file, file_name="Final_Costs.xlsx")
             result_df.to_excel("Final_Costs.xlsx", index=False)
             with open("Final_Costs.xlsx", "rb") as file:
                 st.download_button("📥 Download Cost Breakdown", file, file_name="Final_Costs.xlsx")
